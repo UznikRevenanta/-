@@ -5,7 +5,6 @@ from datetime import datetime
 
 app = Flask(__name__)
 
-# Указываем путь к базе данных во временной папке системы для стабильной работы на хостинге
 DB_PATH = os.path.join('/tmp', 'database.db') if os.path.exists('/tmp') else 'database.db'
 
 def init_db():
@@ -24,7 +23,11 @@ def init_db():
         )
     ''')
     conn.commit()
-    conn.close()
+    conn.close()  
+    
+@app.before_request
+def before_request():
+    init_db()
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
@@ -39,7 +42,7 @@ def index():
             curr_reading = float(request.form['curr_reading'])
             tariff = float(request.form['tariff'])
 
-            # Поиск предыдущих показаний для конкретного абонента и услуги
+           
             cursor.execute('''
                 SELECT curr_reading FROM payments 
                 WHERE fio = ? AND service_name = ? 
@@ -69,7 +72,7 @@ def index():
         except ValueError:
             result_message = "Ошибка: Введите корректные числа!"
 
-    # Выгрузка истории из базы данных
+   
     cursor.execute("SELECT * FROM payments ORDER BY id DESC")
     all_payments = cursor.fetchall()
     conn.close()
